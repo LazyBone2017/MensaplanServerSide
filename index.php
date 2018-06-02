@@ -1,5 +1,5 @@
 <?php
-include('lib/PDF2TEXT.php');
+include 'vendor/autoload.php';
 /**
  * Created by PhpStorm.
  * User: Jonas Schroeter
@@ -27,15 +27,15 @@ function downloadMensaplan()
 
     $url = "https://www.liebigmensaservice.de/speiseplan/sppl-asbhelmholtz-" . $week . $year . ".pdf";
 
-    $a = new PDF2Text();
-    $a->setFilename($url);
-    $a->decodePDF();
-    $pdfString = $a->output();
-    $pdfString = trim(preg_replace('/\s+/', ' ', $pdfString));
-    $pdfString = utf8_encode($pdfString);
+    $parser = new \Smalot\PdfParser\Parser();
+    $pdf = $parser->parseFile($url);
+
+    $pdfString = $pdf->getText();
+    $pdfString = nl2br($pdfString);
 
     $pdfString = substr($pdfString, strpos($pdfString, "vegan") + 5);
-    $pdfString = substr($pdfString, 0, strpos($pdfString, "Tagen") - 11);
+    $pdfString = substr($pdfString, 0, strpos($pdfString, "An allen"));
+    //echo $pdfString;
     $dayArray = array();
     $days = array("Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag");
     for ($i = 0; $i < sizeof($days); $i++) {
@@ -46,8 +46,21 @@ function downloadMensaplan()
         $pdfString = substr($pdfString, strpos($pdfString, $days[$i]));
         //echo $dayArray[$i] . "<br>";
     }
-    $dayArray[5] = $week . $year;
-    $jsonString = json_encode($dayArray);
+
+    $mensaplan = array(array(), array(), array(), array(), array());
+    for ($i = 0; $i < sizeof($mensaplan); $i++) { //menüs und deserts unterscheiden
+        $dayArray[$i] = str_replace("\t", "", $dayArray[$i]);
+
+        $mensaplan[$i][0] = substr($dayArray[$i], stripos($dayArray[$i], "\n"), stripos($dayArray[$i], "Dessert:") - stripos($dayArray[$i], "\n"));
+        $dayArray[$i] = substr($dayArray[$i], stripos($dayArray[$i], "Dessert:"));
+        $mensaplan[$i][1] = substr($dayArray[$i], stripos($dayArray[$i], "\n"), strripos($dayArray[$i], "Dessert:") - stripos($dayArray[$i], "\n"));
+        $mensaplan[$i][2] = substr($dayArray[$i], stripos($dayArray[$i], "Dessert:"), stripos($dayArray[$i], "\n") - stripos($dayArray[$i], "Dessert:"));
+    }
+
+    $mensaplan[5] = $week . $year;
+    $jsonString = json_encode($mensaplan);
+    $jsonString = str_replace("\\n", "", $jsonString);
+    $jsonString = str_replace("<br \\/>", "", $jsonString);
     echo $jsonString;
     $fileLastUpdate = fopen("./lastUpdate.json", "w+") or die("Unable to open file!");
     fwrite($fileLastUpdate, $jsonString);
