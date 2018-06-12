@@ -19,7 +19,7 @@ function downloadMensaplan()
 
     $fileLastUpdate = fopen("./lastUpdate.json", "r") or die("Unable to open file!");
     $jsonLastUpdate = fread($fileLastUpdate, filesize("lastUpdate.json"));
-    if (json_decode($jsonLastUpdate)[5] == $week) {
+    if (json_decode($jsonLastUpdate)[5][0] == $week) {
         echo json_decode($jsonLastUpdate);
         fclose($fileLastUpdate);
         return;
@@ -58,7 +58,7 @@ function downloadMensaplan()
         $mensaplan[$i][2] = substr($dayArray[$i], stripos($dayArray[$i], "Dessert:"), stripos($dayArray[$i], "\n") - stripos($dayArray[$i], "Dessert:"));
     }
 
-    $mensaplan[5] = $week . $year;
+    $mensaplan[5] = array($week . $year);
     $jsonString = json_encode($mensaplan);
     $jsonString = str_replace("\\n", "", $jsonString);
     $jsonString = str_replace("<br \\/>", "", $jsonString);
