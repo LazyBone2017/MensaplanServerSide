@@ -9,6 +9,7 @@ include 'vendor/autoload.php';
 downloadMensaplan();
 function downloadMensaplan()
 {
+    //Test addition
     $week = date("W");
     $year = date("Y");
     $day = date("l");
